@@ -1,33 +1,97 @@
-import { useRef, useEffect, useState } from "react";
-import CXPlayer from "../src/lib/CxPlayer";
-import Log from "../src/lib/CxPlayer/log";
+import { useRef, useEffect, useState, useMemo, useCallback, use } from "react";
+import PlayList from "src/components/Playlist";
+import SearchYoutube from "src/components/SearchYoutube";
+import CXPlayer from "src/lib/CxPlayer";
+import Log from "src/lib/CxPlayer/log";
+
+import type { Video } from "youtube-sr";
 
 export default function HomePage() {
   // const musicURL = "/api/youtube/xa-h_bo3Izw";
-  const musicURL = "/api/youtube/-b5L2Udw3Qg";
+  // const musicURL = "/api/youtube/-b5L2Udw3Qg";
+
   const [playerVersion, setPlayerVersion] = useState("");
   useEffect(() => {
     setPlayerVersion("MediaSource" in window ? "steaming" : "native");
   }, []);
 
-  return (
-    <div style={{ width: "100vw", height: "40vh" }}>
-      {playerVersion == "steaming" ? (
-        <DesktopPlayer musicURL={musicURL} />
-      ) : (
-        <></>
-      )}
+  const [searching, setSearching] = useState<Boolean>(false);
+  const [playingTrack, setPlayingTrack] = useState<Video>();
 
-      {playerVersion == "native" ? (
-        <video src={musicURL} playsInline controls width="100%" height="100%" />
-      ) : (
-        <></>
-      )}
-    </div>
+  const musicURL = useMemo(
+    () =>
+      playingTrack?.id
+        ? `/api/youtube/${playingTrack?.id}`
+        : "/api/youtube/-b5L2Udw3Qg",
+    [playingTrack?.id]
+  );
+
+  const onPlaylistChangeHandler = useCallback(
+    ({ playlist }: { playlist: Video[] }): void => {
+      setPlayingTrack(playlist[0]);
+    },
+    []
+  );
+
+  const onEnded = useCallback(() => {
+    if (!playingTrack?.id) return;
+    fetch(`/api/playlist/remove_track?trackID=${playingTrack?.id}`);
+  }, [playingTrack?.id]);
+
+  const PlayerComponent = useMemo(
+    () => () =>
+      (
+        <div style={{ width: "100vw", height: "40vh" }}>
+          {playerVersion == "steaming" ? (
+            <DesktopPlayer musicURL={musicURL} onEnded={onEnded} />
+          ) : (
+            <></>
+          )}
+
+          {playerVersion == "native" ? (
+            <video
+              src={musicURL}
+              onEnded={onEnded}
+              playsInline
+              controls
+              width="100%"
+              height="100%"
+            />
+          ) : (
+            <></>
+          )}
+        </div>
+      ),
+    [musicURL]
+  );
+
+  return (
+    <>
+      <PlayerComponent />
+      <button
+        onClick={() => {
+          setSearching((prev) => !prev);
+        }}
+      >
+        TOGGLE SEARCH
+      </button>
+      <div style={{ display: !searching ? "none" : "block" }}>
+        <SearchYoutube />
+      </div>
+      <div style={{ display: searching ? "none" : "block" }}>
+        <PlayList onChange={onPlaylistChangeHandler} />
+      </div>
+    </>
   );
 }
 
-function DesktopPlayer({ musicURL }: { musicURL: string }) {
+function DesktopPlayer({
+  musicURL,
+  onEnded,
+}: {
+  musicURL: string;
+  onEnded: Function;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<CXPlayer>();
   const bufferingState = useRef<Boolean>(false);
@@ -44,7 +108,7 @@ function DesktopPlayer({ musicURL }: { musicURL: string }) {
       bufferAbotController.current?.abort?.();
       playerRef.current?.destroy();
     };
-  }, []);
+  }, [musicURL]);
 
   const Play = async (playTime: number = 0) => {
     bufferAbotController.current?.abort?.();
@@ -93,8 +157,12 @@ function DesktopPlayer({ musicURL }: { musicURL: string }) {
         const video = videoRef.current;
         const player = playerRef.current;
         if (!video || !player) return;
-        if (bufferingState.current) return;
 
+        if (video.currentTime >= video.duration - 1) {
+          onEnded();
+        }
+
+        if (bufferingState.current) return;
         for (let i = 0; i < video.buffered.length; i++) {
           const end = video.buffered.end(i);
           if (video.currentTime >= end - 30) {
