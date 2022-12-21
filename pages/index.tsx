@@ -70,7 +70,7 @@ export default function HomePage() {
           </div>
         );
       },
-    [musicURL]
+    [musicURL, playerVersion]
   );
 
   return (
