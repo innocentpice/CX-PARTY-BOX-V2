@@ -12,7 +12,7 @@ export default function HomePage() {
 
   const [playerVersion, setPlayerVersion] = useState("");
   useEffect(() => {
-    setPlayerVersion("MediaSource" in window ? "steaming" : "native");
+    setPlayerVersion("MediaSource" in window ? "steaming" : "nativeVideo");
   }, []);
 
   const [searching, setSearching] = useState<Boolean>(false);
@@ -38,44 +38,99 @@ export default function HomePage() {
     fetch(`/api/playlist/remove_track?trackID=${playingTrack?.id}`);
   }, [playingTrack?.id]);
 
-  const PlayerComponent = useMemo(
-    () =>
-      function PlayerComponent() {
-        const nativePlayerRef = useRef<HTMLVideoElement>(null);
-        useEffect(() => {
-          nativePlayerRef.current?.play?.().catch(console.log);
-        }, [musicURL, playerVersion]);
+  const nativePlayerRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
 
-        return (
-          <div style={{ width: "100vw", height: "40vh" }}>
-            {playerVersion == "steaming" ? (
-              <DesktopPlayer musicURL={musicURL} onEnded={onEnded} />
-            ) : (
-              <></>
-            )}
+  useEffect(() => {
+    if (!nativePlayerRef.current) return;
+    nativePlayerRef.current.src = musicURL;
+    nativePlayerRef.current.play().catch(console.log);
+  }, [musicURL]);
 
-            {playerVersion == "native" ? (
-              <video
-                ref={nativePlayerRef}
-                src={musicURL}
-                onEnded={onEnded}
-                playsInline
-                controls
-                width="100%"
-                height="100%"
-              />
-            ) : (
-              <></>
-            )}
-          </div>
-        );
-      },
-    [musicURL, playerVersion]
-  );
+  useEffect(() => {
+    if (!playingTrack || !nativePlayerRef.current) return;
+
+    const onplayHandler = () => {
+      if (!("mediaSession" in navigator)) return;
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: playingTrack.title,
+        artist: playingTrack.title,
+        album: playingTrack.title,
+        // artwork: playingTrack.id
+        //   ? [96, 128, 192, 256, 384, 512, 1024].map((size) => ({
+        //       src: `/api/youtube_thumbnail/${playingTrack.id}/${size}`,
+        //       sizes: `${size}x${size}`,
+        //       type: "image/png",
+        //     }))
+        //   : [],
+      });
+
+      navigator.mediaSession.setActionHandler("play", () => {
+        nativePlayerRef.current?.play();
+      });
+      navigator.mediaSession.setActionHandler("pause", () => {
+        nativePlayerRef.current?.pause();
+      });
+
+      navigator.mediaSession.setActionHandler("seekto", (event) => {
+        if (!nativePlayerRef.current || !event.seekTime) return;
+
+        if (event.fastSeek && "fastSeek" in nativePlayerRef.current) {
+          nativePlayerRef.current.fastSeek(event.seekTime);
+          return;
+        }
+
+        nativePlayerRef.current.currentTime = event.seekTime;
+      });
+
+      navigator.mediaSession.setActionHandler("nexttrack", onEnded);
+
+      // @ts-ignore
+      navigator.mediaSession.setActive?.(true);
+    };
+
+    onplayHandler();
+    nativePlayerRef.current.addEventListener("timeupdate", onplayHandler);
+    nativePlayerRef.current.addEventListener("play", onplayHandler);
+    nativePlayerRef.current.addEventListener("playing", onplayHandler);
+    nativePlayerRef.current.addEventListener("ended", onEnded);
+
+    return () => {
+      nativePlayerRef.current?.removeEventListener("timeupdate", onplayHandler);
+      nativePlayerRef.current?.removeEventListener("play", onplayHandler);
+      nativePlayerRef.current?.removeEventListener("playing", onplayHandler);
+      nativePlayerRef.current?.removeEventListener("ended", onEnded);
+    };
+  }, [playingTrack, onEnded]);
 
   return (
     <>
-      <PlayerComponent />
+      {playerVersion == "steaming" ? (
+        <DesktopPlayer musicURL={musicURL} onEnded={onEnded} />
+      ) : (
+        <></>
+      )}
+
+      {playerVersion == "nativeVideo" ? (
+        <video
+          ref={nativePlayerRef}
+          onEnded={onEnded}
+          playsInline
+          autoPlay
+          controls
+          width="100%"
+          height="100%"
+        />
+      ) : (
+        <></>
+      )}
+
+      {playerVersion == "nativeAudio" ? (
+        <audio ref={nativePlayerRef} onEnded={onEnded} autoPlay controls />
+      ) : (
+        <></>
+      )}
+
       <button
         onClick={() => {
           setSearching((prev) => !prev);
@@ -83,6 +138,20 @@ export default function HomePage() {
       >
         TOGGLE SEARCH
       </button>
+      {playerVersion == "steaming" ? (
+        <button
+          onClick={() => {
+            setPlayerVersion((prev) =>
+              prev === "nativeAudio" ? "nativeVideo" : "nativeAudio"
+            );
+          }}
+        >
+          TOGGLE AUDIO
+        </button>
+      ) : (
+        <></>
+      )}
+
       <div style={{ display: !searching ? "none" : "block" }}>
         <SearchYoutube />
       </div>
@@ -158,6 +227,7 @@ function DesktopPlayer({
     <video
       ref={videoRef}
       playsInline
+      autoPlay
       controls
       width="100%"
       height="100%"
