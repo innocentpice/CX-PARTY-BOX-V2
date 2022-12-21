@@ -44,7 +44,7 @@ export default function HomePage() {
         const nativePlayerRef = useRef<HTMLVideoElement>(null);
         useEffect(() => {
           nativePlayerRef.current?.play?.().catch(console.log);
-        }, []);
+        }, [musicURL, playerVersion]);
 
         return (
           <div style={{ width: "100vw", height: "40vh" }}>
