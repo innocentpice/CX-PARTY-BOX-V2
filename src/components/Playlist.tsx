@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { PLAYLIST_EVENTS } from "src/sse/channel/PLAYLIST_EVENTS";
 import type { Video } from "youtube-sr";
 
@@ -41,7 +42,11 @@ export default function PlayList({ onChange }: PlayListProps) {
           <div key={`playlisttrack_${track.id}`}>
             <div className="list-queue">
               <div style={{ width: 50, height: 50, display: "inline-block" }}>
-                <img src={track.thumbnail?.url} height="100%" />
+                <Image
+                  src={track.thumbnail?.url as string}
+                  fill
+                  alt="thumbnail"
+                />
               </div>
               <div style={{ display: "inline-block" }}>{track.title}</div>
               <div className="box-btn-del">

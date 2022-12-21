@@ -3,6 +3,10 @@ import type { Channel, Session } from "better-sse";
 import type { Video } from "youtube-sr";
 import { PLAYLIST_EVENTS } from "./PLAYLIST_EVENTS";
 
+declare global {
+  var PLAYLIST_CANNEL: Channel;
+}
+
 if (!global.PLAYLIST_CANNEL) {
   global.PLAYLIST_CANNEL = createChannel();
 }

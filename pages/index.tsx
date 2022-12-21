@@ -39,29 +39,31 @@ export default function HomePage() {
   }, [playingTrack?.id]);
 
   const PlayerComponent = useMemo(
-    () => () =>
-      (
-        <div style={{ width: "100vw", height: "40vh" }}>
-          {playerVersion == "steaming" ? (
-            <DesktopPlayer musicURL={musicURL} onEnded={onEnded} />
-          ) : (
-            <></>
-          )}
+    () =>
+      function PlayerComponent() {
+        return (
+          <div style={{ width: "100vw", height: "40vh" }}>
+            {playerVersion == "steaming" ? (
+              <DesktopPlayer musicURL={musicURL} onEnded={onEnded} />
+            ) : (
+              <></>
+            )}
 
-          {playerVersion == "native" ? (
-            <video
-              src={musicURL}
-              onEnded={onEnded}
-              playsInline
-              controls
-              width="100%"
-              height="100%"
-            />
-          ) : (
-            <></>
-          )}
-        </div>
-      ),
+            {playerVersion == "native" ? (
+              <video
+                src={musicURL}
+                onEnded={onEnded}
+                playsInline
+                controls
+                width="100%"
+                height="100%"
+              />
+            ) : (
+              <></>
+            )}
+          </div>
+        );
+      },
     [musicURL]
   );
 

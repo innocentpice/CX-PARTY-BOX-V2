@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import type { Video } from "youtube-sr";
 
 export default function SearchYoutube() {
@@ -48,7 +49,11 @@ export default function SearchYoutube() {
           <div key={`searchResult_${track.id}`}>
             <div className="list-queue-search">
               <div style={{ width: 50, height: 50, display: "inline-block" }}>
-                <img src={track.thumbnail?.url} height="100%" />
+                <Image
+                  src={track.thumbnail?.url as string}
+                  fill
+                  alt="thumbnail"
+                />
               </div>
               <div style={{ display: "inline-block" }}>{track.title}</div>
               <button
