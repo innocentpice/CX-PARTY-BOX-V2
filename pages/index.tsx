@@ -38,16 +38,28 @@ export default function HomePage() {
     fetch(`/api/playlist/remove_track?trackID=${playingTrack?.id}`);
   }, [playingTrack?.id]);
 
-  const nativePlayerRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
+  const nativeVideoPlayerRef = useRef<HTMLVideoElement>(null);
+  const nativeAudioPlayerRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    if (!nativePlayerRef.current) return;
-    nativePlayerRef.current.src = musicURL;
-    nativePlayerRef.current.play().catch(console.log);
-  }, [musicURL]);
+    const nativePlayer =
+      playerVersion == "nativeVideo"
+        ? nativeVideoPlayerRef.current
+        : nativeAudioPlayerRef.current;
+
+    if (!nativePlayer) return;
+
+    nativePlayer.src = musicURL;
+    nativePlayer.play().catch(console.log);
+  }, [musicURL, playerVersion]);
 
   useEffect(() => {
-    if (!playingTrack || !nativePlayerRef.current) return;
+    const nativePlayer =
+      playerVersion == "nativeVideo"
+        ? nativeVideoPlayerRef.current
+        : nativeAudioPlayerRef.current;
+
+    if (!playingTrack || !nativePlayer) return;
 
     const onplayHandler = () => {
       if (!("mediaSession" in navigator)) return;
@@ -66,21 +78,34 @@ export default function HomePage() {
       });
 
       navigator.mediaSession.setActionHandler("play", () => {
-        nativePlayerRef.current?.play();
+        const nativePlayer =
+          playerVersion == "nativeVideo"
+            ? nativeVideoPlayerRef.current
+            : nativeAudioPlayerRef.current;
+        nativePlayer?.play();
       });
       navigator.mediaSession.setActionHandler("pause", () => {
-        nativePlayerRef.current?.pause();
+        const nativePlayer =
+          playerVersion == "nativeVideo"
+            ? nativeVideoPlayerRef.current
+            : nativeAudioPlayerRef.current;
+        nativePlayer?.pause();
       });
 
       navigator.mediaSession.setActionHandler("seekto", (event) => {
-        if (!nativePlayerRef.current || !event.seekTime) return;
+        const nativePlayer =
+          playerVersion == "nativeVideo"
+            ? nativeVideoPlayerRef.current
+            : nativeAudioPlayerRef.current;
 
-        if (event.fastSeek && "fastSeek" in nativePlayerRef.current) {
-          nativePlayerRef.current.fastSeek(event.seekTime);
+        if (!nativePlayer || !event.seekTime) return;
+
+        if (event.fastSeek && "fastSeek" in nativePlayer) {
+          nativePlayer.fastSeek(event.seekTime);
           return;
         }
 
-        nativePlayerRef.current.currentTime = event.seekTime;
+        nativePlayer.currentTime = event.seekTime;
       });
 
       navigator.mediaSession.setActionHandler("nexttrack", onEnded);
@@ -90,18 +115,18 @@ export default function HomePage() {
     };
 
     onplayHandler();
-    nativePlayerRef.current.addEventListener("timeupdate", onplayHandler);
-    nativePlayerRef.current.addEventListener("play", onplayHandler);
-    nativePlayerRef.current.addEventListener("playing", onplayHandler);
-    nativePlayerRef.current.addEventListener("ended", onEnded);
+    nativePlayer.addEventListener("timeupdate", onplayHandler);
+    nativePlayer.addEventListener("play", onplayHandler);
+    nativePlayer.addEventListener("playing", onplayHandler);
+    nativePlayer.addEventListener("ended", onEnded);
 
     return () => {
-      nativePlayerRef.current?.removeEventListener("timeupdate", onplayHandler);
-      nativePlayerRef.current?.removeEventListener("play", onplayHandler);
-      nativePlayerRef.current?.removeEventListener("playing", onplayHandler);
-      nativePlayerRef.current?.removeEventListener("ended", onEnded);
+      nativePlayer?.removeEventListener("timeupdate", onplayHandler);
+      nativePlayer?.removeEventListener("play", onplayHandler);
+      nativePlayer?.removeEventListener("playing", onplayHandler);
+      nativePlayer?.removeEventListener("ended", onEnded);
     };
-  }, [playingTrack, onEnded]);
+  }, [playingTrack, onEnded, playerVersion]);
 
   return (
     <>
@@ -113,7 +138,7 @@ export default function HomePage() {
 
       {playerVersion == "nativeVideo" ? (
         <video
-          ref={nativePlayerRef}
+          ref={nativeVideoPlayerRef}
           onEnded={onEnded}
           playsInline
           autoPlay
@@ -126,7 +151,7 @@ export default function HomePage() {
       )}
 
       {playerVersion == "nativeAudio" ? (
-        <audio ref={nativePlayerRef} onEnded={onEnded} autoPlay controls />
+        <audio ref={nativeAudioPlayerRef} onEnded={onEnded} autoPlay controls />
       ) : (
         <></>
       )}
@@ -138,7 +163,7 @@ export default function HomePage() {
       >
         TOGGLE SEARCH
       </button>
-      {playerVersion == "steaming" ? (
+      {playerVersion != "steaming" ? (
         <button
           onClick={() => {
             setPlayerVersion((prev) =>
