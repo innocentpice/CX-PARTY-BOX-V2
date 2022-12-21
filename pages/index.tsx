@@ -41,6 +41,11 @@ export default function HomePage() {
   const PlayerComponent = useMemo(
     () =>
       function PlayerComponent() {
+        const nativePlayerRef = useRef<HTMLVideoElement>(null);
+        useEffect(() => {
+          nativePlayerRef.current?.play?.().catch(console.log);
+        }, []);
+
         return (
           <div style={{ width: "100vw", height: "40vh" }}>
             {playerVersion == "steaming" ? (
@@ -51,6 +56,7 @@ export default function HomePage() {
 
             {playerVersion == "native" ? (
               <video
+                ref={nativePlayerRef}
                 src={musicURL}
                 onEnded={onEnded}
                 playsInline

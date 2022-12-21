@@ -44,7 +44,8 @@ export default function PlayList({ onChange }: PlayListProps) {
               <div style={{ width: 50, height: 50, display: "inline-block" }}>
                 <Image
                   src={track.thumbnail?.url as string}
-                  fill
+                  width={50}
+                  height={50}
                   alt="thumbnail"
                 />
               </div>
