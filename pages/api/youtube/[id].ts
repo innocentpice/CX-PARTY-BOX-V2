@@ -38,7 +38,7 @@ async function Start(req: NextApiRequest, res: NextApiResponse) {
 
   res.status(start || end ? 206 : 200);
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "private, max-age=21299");
+  res.setHeader("Cache-Control", "no-store");
   res.setHeader("Accept-Ranges", "bytes");
   res.setHeader("Content-Type", targetFormat.mimeType || "video/mp4");
   res.setHeader("X-Content-Type-Options", "nosniff");
