@@ -35,6 +35,17 @@ class PlaylistChannel {
 
   constructor() {
     this.channel = global.PLAYLIST_CANNEL;
+    this._setInitialTrack();
+  }
+  async _setInitialTrack() {
+    if (!this.playlist.length) {
+      const videoResult: Video = await YoutubeSR.getVideo(
+        `https://www.youtube.com/watch?v=-b5L2Udw3Qg`
+      );
+
+      this.playlist = [videoResult];
+      return;
+    }
   }
 
   register(session: Session) {
@@ -58,7 +69,7 @@ class PlaylistChannel {
           `https://www.youtube.com/watch?v=${trackID}`
         );
         const videoResult: Video = await YoutubeSR.getVideo(
-          `https://www.youtube.com/watch?v=${info.related_videos[0].id}`
+          `https://www.youtube.com/watch?v=${info.related_videos[1].id}`
         );
 
         this.playlist = [...result, videoResult];

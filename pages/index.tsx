@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState, useMemo, useCallback, use } from "react";
-import YoutubeSR from "youtube-sr";
 import PlayList from "src/components/Playlist";
 import SearchYoutube from "src/components/SearchYoutube";
 import CXPlayer from "src/lib/CxPlayer";
@@ -29,16 +28,7 @@ export default function HomePage() {
 
   const onPlaylistChangeHandler = useCallback(
     ({ playlist }: { playlist: Video[] }): void => {
-      (async () => {
-        if (!playlist.length) {
-          const videoResult: Video = await YoutubeSR.getVideo(
-            `https://www.youtube.com/watch?v=dynCPvq9wlc`
-          );
-          setPlayingTrack(videoResult);
-          return;
-        }
-        setPlayingTrack(playlist[0]);
-      })();
+      setPlayingTrack(playlist[0]);
     },
     []
   );
