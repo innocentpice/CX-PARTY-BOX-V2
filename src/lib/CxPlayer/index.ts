@@ -212,7 +212,7 @@ export default class CXPlayer {
         sb.ms = ms;
         sb.id = track_id;
         this.mp4boxfile.setSegmentOptions(track_id, sb, {
-          nbSamples: 1024 * 1024,
+          nbSamples: mp4track.nb_samples || 1024 * 1024,
         });
         sb.pendingAppends = [];
       } catch (e) {
