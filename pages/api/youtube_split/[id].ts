@@ -97,7 +97,7 @@ export default async function Start(req: NextApiRequest, res: NextApiResponse) {
           }
 
           newSteam.pipe(res);
-          resolve();
+          resolve(true);
         }
       );
     });
@@ -125,27 +125,28 @@ export default async function Start(req: NextApiRequest, res: NextApiResponse) {
   } catch (err) {
     try {
       console.log(err);
-      res.status(500).json({ err: err.message });
+      // @ts-ignore
+      res.status(500).json({ err: err?.message || "" });
     } catch (err) {
-      // console.log(err);
+      console.log(err);
     }
   }
 }
 
-function toArrayBuffer(buffer) {
-  var ab = new ArrayBuffer(buffer.length);
-  var view = new Uint8Array(ab);
-  for (var i = 0; i < buffer.length; ++i) {
-    view[i] = buffer[i];
-  }
-  return ab;
-}
+// function toArrayBuffer(buffer) {
+//   var ab = new ArrayBuffer(buffer.length);
+//   var view = new Uint8Array(ab);
+//   for (var i = 0; i < buffer.length; ++i) {
+//     view[i] = buffer[i];
+//   }
+//   return ab;
+// }
 
-function toBuffer(ab) {
-  var buffer = new Buffer(ab.byteLength);
-  var view = new Uint8Array(ab);
-  for (var i = 0; i < buffer.length; ++i) {
-    buffer[i] = view[i];
-  }
-  return buffer;
-}
+// function toBuffer(ab) {
+//   var buffer = new Buffer(ab.byteLength);
+//   var view = new Uint8Array(ab);
+//   for (var i = 0; i < buffer.length; ++i) {
+//     buffer[i] = view[i];
+//   }
+//   return buffer;
+// }
