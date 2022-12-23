@@ -1,7 +1,9 @@
 import { createChannel } from "better-sse";
+import { PLAYLIST_EVENTS } from "./PLAYLIST_EVENTS";
+import ytdl from "ytdl-core";
+import YoutubeSR from "youtube-sr";
 import type { Channel, Session } from "better-sse";
 import type { Video } from "youtube-sr";
-import { PLAYLIST_EVENTS } from "./PLAYLIST_EVENTS";
 
 declare global {
   var PLAYLIST_CANNEL: Channel;
@@ -49,7 +51,22 @@ class PlaylistChannel {
   }
 
   removeTrack(trackID: String) {
-    this.playlist = this.playlist.filter((item) => item.id !== trackID);
+    (async () => {
+      const result = this.playlist.filter((item) => item.id !== trackID);
+      if (!result.length) {
+        const info = await ytdl.getInfo(
+          `https://www.youtube.com/watch?v=${trackID}`
+        );
+        const videoResult: Video = await YoutubeSR.getVideo(
+          `https://www.youtube.com/watch?v=${info.related_videos[0].id}`
+        );
+
+        this.playlist = [...result, videoResult];
+        return;
+      }
+
+      this.playlist = [...result];
+    })();
   }
 
   getPlaylist(): Video[] {
