@@ -40,7 +40,7 @@ class PlaylistChannel {
   async _setInitialTrack() {
     if (!this.playlist.length) {
       const videoResult: Video = await YoutubeSR.getVideo(
-        `https://www.youtube.com/watch?v=-b5L2Udw3Qg`
+        `https://www.youtube.com/watch?v=UfY14wLwubc`
       );
 
       this.playlist = [videoResult];
