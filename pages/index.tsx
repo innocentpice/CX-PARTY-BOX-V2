@@ -21,9 +21,11 @@ export default function HomePage() {
   const musicURL = useMemo(
     () =>
       playingTrack?.id
-        ? `/api/youtube/${playingTrack?.id}`
+        ? `/api/youtube${playerVersion === "nativeAudio" ? "_audio" : ""}/${
+            playingTrack?.id
+          }`
         : "/api/youtube/-b5L2Udw3Qg",
-    [playingTrack?.id]
+    [playingTrack?.id, playerVersion]
   );
 
   const onPlaylistChangeHandler = useCallback(
@@ -163,19 +165,16 @@ export default function HomePage() {
       >
         TOGGLE SEARCH
       </button>
-      {playerVersion != "steaming" ? (
-        <button
-          onClick={() => {
-            setPlayerVersion((prev) =>
-              prev === "nativeAudio" ? "nativeVideo" : "nativeAudio"
-            );
-          }}
-        >
-          TOGGLE AUDIO
-        </button>
-      ) : (
-        <></>
-      )}
+
+      <button
+        onClick={() => {
+          setPlayerVersion((prev) =>
+            prev === "nativeAudio" ? "nativeVideo" : "nativeAudio"
+          );
+        }}
+      >
+        TOGGLE AUDIO
+      </button>
 
       <div style={{ display: !searching ? "none" : "block" }}>
         <SearchYoutube />

@@ -10,12 +10,23 @@ export const config = {
   },
 };
 
-async function Start(req: NextApiRequest, res: NextApiResponse) {
+export async function Start(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  audio?: boolean
+) {
   const id = req.query.id as string;
+
+  console.log("audio", audio);
 
   const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
   const targetFormat = info.formats
-    .filter((item) => item.hasAudio && item.hasVideo)
+    .filter(
+      (item) =>
+        item.hasAudio &&
+        (audio ? !item.hasVideo : item.hasVideo) &&
+        (audio ? `${item.mimeType}`.includes("mp4") : true)
+    )
     .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
 
   const range = req.query.range || req.headers.range;
@@ -49,7 +60,7 @@ async function Start(req: NextApiRequest, res: NextApiResponse) {
       ...(end ? { end } : {}),
     },
     filter: (format) => format.url === targetFormat.url,
-    dlChunkSize: 10,
+    ...(!audio ? { dlChunkSize: 1024 } : {}),
   });
 
   return new Promise<Boolean>((resolve, reject) => {
@@ -92,7 +103,7 @@ export default async function getAudio(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  await Start(req, res).catch((err) => {
+  await Start(req, res, false).catch((err) => {
     console.log(err);
     res.status(500).json({ err: err.message });
   });
