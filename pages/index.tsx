@@ -12,7 +12,7 @@ export default function HomePage() {
 
   const [playerVersion, setPlayerVersion] = useState("");
   useEffect(() => {
-    setPlayerVersion("MediaSource" in window ? "steaming" : "nativeVideo");
+    setPlayerVersion("MediaSource" in window ? "steaming" : "nativeAudio");
   }, []);
 
   const [searching, setSearching] = useState<Boolean>(false);
@@ -21,7 +21,7 @@ export default function HomePage() {
   const musicURL = useMemo(
     () =>
       playingTrack?.id
-        ? `/api/youtube${playerVersion === "nativeAudio" ? "_audio" : ""}/${
+        ? `/api/${playerVersion === "nativeAudio" ? "m3u8" : "youtube"}/${
             playingTrack?.id
           }`
         : "/api/youtube/-b5L2Udw3Qg",

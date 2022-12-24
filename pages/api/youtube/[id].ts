@@ -17,8 +17,6 @@ export async function Start(
 ) {
   const id = req.query.id as string;
 
-  console.log("audio", audio);
-
   const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
   const targetFormat = info.formats
     .filter(
@@ -27,7 +25,11 @@ export async function Start(
         (audio ? !item.hasVideo : item.hasVideo) &&
         (audio ? `${item.mimeType}`.includes("mp4") : true)
     )
-    .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+    .sort((a, b) =>
+      audio
+        ? (a.bitrate || 0) - (b.bitrate || 0)
+        : (b.bitrate || 0) - (a.bitrate || 0)
+    )[0];
 
   const range = req.query.range || req.headers.range;
   const parts = `${range}`.replace(/bytes=/, "").split("-");
@@ -50,7 +52,7 @@ export async function Start(
   res.status(start || end ? 206 : 200);
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "no-store");
-  // res.setHeader("Accept-Ranges", "bytes");
+  res.setHeader("Accept-Ranges", "bytes");
   res.setHeader("Content-Type", targetFormat.mimeType || "video/mp4");
   res.setHeader("X-Content-Type-Options", "nosniff");
 
@@ -90,6 +92,7 @@ export async function Start(
                 totalLength || targetFormat.contentLength || "*"
               }`
             );
+
             newSteam.pipe(res);
             newSteam.push(null);
             resolve(true);
