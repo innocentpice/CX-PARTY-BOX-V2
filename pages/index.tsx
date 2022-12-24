@@ -23,7 +23,7 @@ export default function HomePage() {
         ? `/api/${playerVersion === "nativeAudio" ? "m3u8" : "youtube"}/${
             playingTrack?.id
           }`
-        : "/api/youtube/-b5L2Udw3Qg",
+        : "",
     [playingTrack?.id, playerVersion]
   );
 
@@ -131,7 +131,7 @@ export default function HomePage() {
 
   return (
     <>
-      {playerVersion == "steaming" ? (
+      {playerVersion == "steaming" && musicURL != "" ? (
         <DesktopPlayer musicURL={musicURL} onEnded={onEnded} />
       ) : (
         <></>
