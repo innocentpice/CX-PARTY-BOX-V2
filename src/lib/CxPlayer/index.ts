@@ -58,7 +58,7 @@ export default class CXPlayer {
     };
 
     this.mp4boxfile.onSegment = (id, user, buffer, sampleNum, is_last) => {
-      var sb = user;
+      const sb = user;
       sb.segmentIndex++;
       sb.pendingAppends.push({
         id: id,
@@ -69,11 +69,11 @@ export default class CXPlayer {
       Log.info(
         "Application",
         "Received new segment for track " +
-          id +
-          " up to sample #" +
-          sampleNum +
-          ", segments pending append: " +
-          sb.pendingAppends.length
+        id +
+        " up to sample #" +
+        sampleNum +
+        ", segments pending append: " +
+        sb.pendingAppends.length
       );
       this.onUpdateEnd(sb, true, false);
     };
@@ -86,6 +86,8 @@ export default class CXPlayer {
       );
     };
 
+
+    this.mp4boxfile.start();
     return this;
   }
 
@@ -180,14 +182,14 @@ export default class CXPlayer {
       Log.info(
         "MSE - SourceBuffer #" + sb.id,
         string +
-          ", updating: " +
-          sb.updating +
-          ", currentTime: " +
-          Log.getDurationString(this.video.currentTime, 1) +
-          ", buffered: " +
-          rangeString +
-          ", pending: " +
-          sb.pendingAppends.length
+        ", updating: " +
+        sb.updating +
+        ", currentTime: " +
+        Log.getDurationString(this.video.currentTime, 1) +
+        ", buffered: " +
+        rangeString +
+        ", pending: " +
+        sb.pendingAppends.length
       );
     }
   }
@@ -225,9 +227,9 @@ export default class CXPlayer {
       Log.warn(
         "MSE",
         "MIME type '" +
-          mime +
-          "' not supported for creation of a SourceBuffer for track id " +
-          track_id
+        mime +
+        "' not supported for creation of a SourceBuffer for track id " +
+        track_id
       );
     }
   }

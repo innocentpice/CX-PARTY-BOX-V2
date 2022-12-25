@@ -12,42 +12,15 @@ export default function DesktopPlayer({
   const playerRef = useRef<CXPlayer>();
   const bufferingState = useRef<Boolean>(false);
   const bufferAbotController = useRef<AbortController>();
+  const chunkSizeForload = useRef<number>(0);
+  const chunkRangeStart = useRef<number>(0);
 
   useEffect(() => {
-    if (!videoRef.current)
-      return;
-
-    playerRef.current = new CXPlayer(videoRef.current);
-
-    Play();
-
-    return () => {
-      bufferAbotController.current?.abort?.();
-      playerRef.current?.destroy();
-    };
-  }, [musicURL]);
-
-  const Play = async (playTime: number = 0) => {
-    bufferAbotController.current?.abort?.();
-
-    try {
-      videoRef.current?.play().catch(console.log);
-      let start = (() => {
-        try {
-          return playerRef.current?.mp4boxfile.seek(playTime, true).offset;
-        } catch (err) {
-          console.log(err);
-          return 0;
-        }
-      })();
-
-      playerRef.current?.mp4boxfile.start();
-
-      bufferAbotController.current = new AbortController();
-
-      bufferingState.current = true;
-
-      const chunkSize = await fetch(musicURL, { headers: { range: "bytes=0-1" } }).then(
+    const initialTimeout = setTimeout(async () => {
+      if (!videoRef.current) return;
+      playerRef.current = new CXPlayer(videoRef.current);
+      videoRef.current.play().catch(console.log);
+      chunkSizeForload.current = await fetch(musicURL, { headers: { range: "bytes=0-1" } }).then(
         (response) => {
           const totalChunkFromHeader = parseInt(
             response.headers
@@ -64,30 +37,38 @@ export default function DesktopPlayer({
           return chunkSizePerPart;
         }
       );
+      loadBuffer();
+    }, 0)
 
-      const fetcher = async (start: number) => {
-        const rStart = start;
-        const rEnd = start + chunkSize;
-        return fetch(musicURL, {
-          signal: bufferAbotController.current?.signal,
-          headers: { Range: `bytes=${rStart}-${rEnd}` },
-        }).then(response => response.arrayBuffer()).then((arrayBuffer) => Buffer.from(arrayBuffer));
-      }
+    return () => {
+      clearTimeout(initialTimeout);
+      bufferAbotController.current?.abort?.();
+      playerRef.current?.destroy();
+      chunkSizeForload.current = 0;
+    };
+  }, [musicURL]);
+
+  const loadBuffer = async () => {
+    if (!chunkSizeForload.current) return;
+    if (!playerRef.current) return;
+    try {
+      const chunkSize = chunkSizeForload.current;
+      const start = chunkRangeStart.current;
 
 
-      const rStartGenerator = (index: number): number => {
-        if (index) {
-          return start + index + (index * chunkSize);
-        }
-        return start;
-      }
 
-      const fetchBufferResults = await Promise.all(new Array(5).fill("").map((_, index) => fetcher(rStartGenerator(index))))
+
+      bufferAbotController.current?.abort();
+      bufferAbotController.current = new AbortController();
+
+      bufferingState.current = true;
+
+      const fetchBufferResults = await bufferLoader(musicURL, start, chunkSize, bufferAbotController.current);
       const appendBuffer = toArrayBuffer(Buffer.concat(fetchBufferResults));
 
       // @ts-ignore
       appendBuffer.fileStart = start;
-      playerRef.current?.mp4boxfile.appendBuffer(appendBuffer, true);
+      chunkRangeStart.current = playerRef.current.mp4boxfile.appendBuffer(appendBuffer, true);
 
       bufferingState.current = false;
     } catch (err) {
@@ -114,12 +95,11 @@ export default function DesktopPlayer({
           onEnded();
         }
 
-        if (bufferingState.current)
-          return;
+        if (bufferingState.current) return;
         for (let i = 0; i < video.buffered.length; i++) {
           const end = video.buffered.end(i);
           if (video.currentTime >= end - 30) {
-            return Play(end);
+            return loadBuffer();
           }
         }
       }}
@@ -146,8 +126,8 @@ export default function DesktopPlayer({
             "Seeking called to video time " +
             Log.getDurationString(video.currentTime)
           );
-
-          Play(video.currentTime);
+          chunkRangeStart.current = playerRef.current?.mp4boxfile.seek(video.currentTime, true).offset;
+          loadBuffer();
           // @ts-ignore
           video.lastSeekTime = video.currentTime;
         }
@@ -155,10 +135,25 @@ export default function DesktopPlayer({
   );
 }
 
+
+
+const bufferLoader = async (musicURL: string, start: number, chunkSize: number, bufferAbotController?: AbortController) => {
+  const fetcher = async (musicURL: string, start: number, chunkSize: number) => {
+    const rStart = start;
+    const rEnd = start + chunkSize;
+    return fetch(musicURL, {
+      signal: bufferAbotController?.signal,
+      headers: { Range: `bytes=${rStart}-${rEnd}` },
+    }).then(response => response.arrayBuffer()).then((arrayBuffer) => Buffer.from(arrayBuffer));
+  }
+
+  return Promise.all(new Array(5).fill("").map((_, index) => fetcher(musicURL, index ? start + index + (index * chunkSize) : start, chunkSize)))
+}
+
 function toArrayBuffer(buffer: Buffer): ArrayBuffer {
-  var ab = new ArrayBuffer(buffer.length);
-  var view = new Uint8Array(ab);
-  for (var i = 0; i < buffer.length; ++i) {
+  const ab = new ArrayBuffer(buffer.length);
+  const view = new Uint8Array(ab);
+  for (let i = 0; i < buffer.length; ++i) {
     view[i] = buffer[i];
   }
   return ab;
