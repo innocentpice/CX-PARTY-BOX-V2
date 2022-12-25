@@ -59,9 +59,6 @@ export default function DesktopPlayer({
       const maxChunksize = maxChunkSize.current;
       if (start >= maxChunksize) return;
 
-
-
-
       bufferAbotController.current?.abort();
       bufferAbotController.current = new AbortController();
 
@@ -103,6 +100,7 @@ export default function DesktopPlayer({
         for (let i = 0; i < video.buffered.length; i++) {
           const end = video.buffered.end(i);
           if (video.currentTime >= end - 30) {
+            console.log({ currentTime: video.currentTime, end });
             return loadBuffer();
           }
         }
