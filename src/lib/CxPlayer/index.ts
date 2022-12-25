@@ -24,7 +24,7 @@ export default class CXPlayer {
 
     video.src = window.URL.createObjectURL(this.ms);
 
-    this.mp4boxfile = MP4Box.createFile();
+    this.mp4boxfile = MP4Box.createFile(true);
     this.mp4boxfile.onMoovStart = function () {
       Log.info("Application", "Starting to parse movie information");
     };
