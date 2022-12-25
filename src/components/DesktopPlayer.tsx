@@ -141,7 +141,7 @@ export default function DesktopPlayer({
 
 const bufferLoader = async (musicURL: string, start: number, chunkSize: number, maxChunkSize: number, bufferAbotController?: AbortController) => {
   const fetcher = async (musicURL: string, start: number, chunkSize: number) => {
-    if (start > maxChunkSize) return Promise.resolve(Buffer.alloc(0));
+    if (start >= maxChunkSize) return Promise.resolve(Buffer.alloc(0));
     const rStart = start;
     const rEnd = start + chunkSize > maxChunkSize ? maxChunkSize : start + chunkSize;
     return fetch(musicURL, {
