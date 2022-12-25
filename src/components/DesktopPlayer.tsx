@@ -56,6 +56,8 @@ export default function DesktopPlayer({
     try {
       const chunkSize = chunkSizeForload.current;
       const start = chunkRangeStart.current;
+      const maxChunksize = maxChunkSize.current;
+      if (start >= maxChunksize) return;
 
 
 
@@ -65,7 +67,7 @@ export default function DesktopPlayer({
 
       bufferingState.current = true;
 
-      const fetchBufferResults = await bufferLoader(musicURL, start, chunkSize, maxChunkSize.current, bufferAbotController.current);
+      const fetchBufferResults = await bufferLoader(musicURL, start, chunkSize, maxChunksize, bufferAbotController.current);
       const appendBuffer = toArrayBuffer(Buffer.concat(fetchBufferResults));
 
       // @ts-ignore
