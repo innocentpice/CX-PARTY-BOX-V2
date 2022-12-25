@@ -99,8 +99,7 @@ export default function DesktopPlayer({
         if (bufferingState.current) return;
         for (let i = 0; i < video.buffered.length; i++) {
           const end = video.buffered.end(i);
-          if (video.currentTime >= end - 30) {
-            console.log({ currentTime: video.currentTime, end });
+          if (video.currentTime >= end - (video.duration * 0.1)) {
             return loadBuffer();
           }
         }
