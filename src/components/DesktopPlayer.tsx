@@ -12,6 +12,7 @@ export default function DesktopPlayer({
   const playerRef = useRef<CXPlayer>();
   const bufferingState = useRef<Boolean>(false);
   const bufferAbotController = useRef<AbortController>();
+  const maxChunkSize = useRef<number>(0);
   const chunkSizeForload = useRef<number>(0);
   const chunkRangeStart = useRef<number>(0);
 
@@ -20,7 +21,7 @@ export default function DesktopPlayer({
       if (!videoRef.current) return;
       playerRef.current = new CXPlayer(videoRef.current);
       videoRef.current.play().catch(console.log);
-      chunkSizeForload.current = await fetch(musicURL, { headers: { range: "bytes=0-1" } }).then(
+      await fetch(musicURL, { headers: { range: "bytes=0-1" } }).then(
         (response) => {
           const totalChunkFromHeader = parseInt(
             response.headers
@@ -34,7 +35,8 @@ export default function DesktopPlayer({
             (totalChunkFromHeader * 0.01).toString()
           );
 
-          return chunkSizePerPart;
+          chunkSizeForload.current = chunkSizePerPart;
+          maxChunkSize.current = totalChunkFromHeader;
         }
       );
       loadBuffer();
@@ -49,7 +51,7 @@ export default function DesktopPlayer({
   }, [musicURL]);
 
   const loadBuffer = async () => {
-    if (!chunkSizeForload.current) return;
+    if (!chunkSizeForload.current || !maxChunkSize.current) return;
     if (!playerRef.current) return;
     try {
       const chunkSize = chunkSizeForload.current;
@@ -63,7 +65,7 @@ export default function DesktopPlayer({
 
       bufferingState.current = true;
 
-      const fetchBufferResults = await bufferLoader(musicURL, start, chunkSize, bufferAbotController.current);
+      const fetchBufferResults = await bufferLoader(musicURL, start, chunkSize, maxChunkSize.current, bufferAbotController.current);
       const appendBuffer = toArrayBuffer(Buffer.concat(fetchBufferResults));
 
       // @ts-ignore
@@ -137,8 +139,9 @@ export default function DesktopPlayer({
 
 
 
-const bufferLoader = async (musicURL: string, start: number, chunkSize: number, bufferAbotController?: AbortController) => {
+const bufferLoader = async (musicURL: string, start: number, chunkSize: number, maxChunkSize: number, bufferAbotController?: AbortController) => {
   const fetcher = async (musicURL: string, start: number, chunkSize: number) => {
+    if (start > maxChunkSize) return Promise.resolve(Buffer.alloc(0));
     const rStart = start;
     const rEnd = start + chunkSize;
     return fetch(musicURL, {
